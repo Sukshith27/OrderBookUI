@@ -1,4 +1,3 @@
-// src/screens/OrderBookScreen.js
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import OrderRow from '../components/OrderRow';
@@ -79,6 +78,12 @@ const styles = StyleSheet.create({
   right: { textAlign: 'right' },
 
   listContent: { paddingBottom: 24 },
-  row: { flexDirection: 'row', height: 48, alignItems: 'center', borderBottomWidth: 1, borderColor: '#f6f6f6' },
+row: {
+    flexDirection: 'row',
+    height: 48,
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderColor: '#f6f6f6',
+  },
   side: { flex: 1 },
 });
