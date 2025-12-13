@@ -1,6 +1,6 @@
 import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
-import OrderRow from '../components/OrderRow';
+import OrderRow from '../components/orderRow';
 import useOrderBook from '../hooks/useOrderBook';
 
 

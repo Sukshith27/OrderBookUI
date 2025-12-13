@@ -2,7 +2,7 @@
 import React from 'react';
 import { StatusBar } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
-import OrderBookScreen from './src/screens/OrderBookScreen';
+import OrderBookScreen from './src/screens/orderBookScreen';
 
 export default function App() {
   return (
