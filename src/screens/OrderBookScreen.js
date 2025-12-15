@@ -1,14 +1,10 @@
-import React, { useEffect, useMemo, useRef } from 'react';
+import React, { useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
-import { LegendList } from '@legendapp/list'; 
 import OrderCell from '../components/orderRow';
 import useOrderBook from '../hooks/useOrderBook';
 
 export default function OrderBookScreen() {
-  const startRenderTime = useRef(Date.now());
-  const firstRenderDone = useRef(false);
-
-  const { asks, bids, prevMapRef, getPrevSize } = useOrderBook('BTCUSD');
+  const { asks, bids, getPrevSize } = useOrderBook('BTCUSD');
 
   const safeAsks = Array.isArray(asks) ? asks : [];
   const safeBids = Array.isArray(bids) ? bids : [];
@@ -18,7 +14,7 @@ export default function OrderBookScreen() {
     const out = [];
     for (let i = 0; i < maxLen; i++) {
       out.push({
-        key: String(i),
+        key: `${safeAsks[i]?.price || ''}-${safeBids[i]?.price || ''}-${i}`,
         ask: safeAsks[i] || { price: '', size: '' },
         bid: safeBids[i] || { price: '', size: '' },
       });
@@ -26,48 +22,35 @@ export default function OrderBookScreen() {
     return out;
   }, [safeAsks, safeBids]);
 
-  const renderItem = ({ item }) => {
-    if (!firstRenderDone.current) {
-      const now = Date.now();
-      const listRenderTime = now - startRenderTime.current;
-      console.log(`[perf] list first item render time: ${listRenderTime} ms`);
-      if (globalThis.WebSocketFirstMessageTime) {
-        console.log('[perf] ws time - render time:', listRenderTime - (globalThis.WebSocketFirstMessageTime), 'ms');
-      }
-      firstRenderDone.current = true;
-    }
+  const renderItem = ({ item }) => (
+    <View style={styles.row}>
 
-    return (
-      <View style={styles.row}>
-        <OrderCell
-          value={item.ask.price}
-          color="#b00020"
-        />
-        <OrderCell
-          value={item.ask.size}
-          curr={item.ask.size}
-          prev={getPrevSize(item.ask.price)}
-          enableFlash
-        />
-        <OrderCell
-          value={item.bid.size}
-          curr={item.bid.size}
-          prev={getPrevSize(item.bid.price)}
-          enableFlash
-        />
-        <OrderCell
-          value={item.bid.price}
-          color="#006400"
-        />
-      </View>
-    );
-  };
+      <OrderCell value={item.ask.price} color="#ff6b6b" />
+      <OrderCell
+        value={item.ask.size}
+        curr={item.ask.size}
+        prev={getPrevSize(item.ask.price)}
+        enableFlash
+        color="#ffffff"
+      />
+
+
+      <OrderCell
+        value={item.bid.size}
+        curr={item.bid.size}
+        prev={getPrevSize(item.bid.price)}
+        enableFlash
+        color="#ffffff"
+      />
+      <OrderCell value={item.bid.price} color="#4cd964" />
+    </View>
+  );
 
   return (
     <View style={styles.container}>
+
       <View style={styles.header}>
-        <Text style={styles.title}>Order Book — BTCUSD</Text>
-        <Text style={styles.subtitle}>L2 Orderbook (live via WebSocket)</Text>
+        <Text style={styles.title}>Order Book</Text>
       </View>
 
       <View style={styles.tableHeader}>
@@ -77,19 +60,14 @@ export default function OrderBookScreen() {
         <Text style={styles.colHeader}>Price (USD)</Text>
       </View>
 
-
       <FlatList
         data={rows}
         keyExtractor={(i) => i.key}
         renderItem={renderItem}
-        
-        estimatedItemSize={48} 
-        recycleItems={true}    
         windowSize={50}
-           initialNumToRender={12}
+        initialNumToRender={15}
         maxToRenderPerBatch={20}
-        getItemLayout={(data, index) => ({ length: 48, offset: 48 * index, index })}
-
+        getItemLayout={(d, i) => ({ length: 44, offset: 44 * i, index: i })}
         contentContainerStyle={styles.listContent}
       />
     </View>
@@ -97,30 +75,41 @@ export default function OrderBookScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#fff' },
-  header: { paddingHorizontal: 16, paddingVertical: 12, borderBottomWidth: 1, borderColor: '#eee' },
-  title: { fontSize: 18, fontWeight: '700' },
-  subtitle: { fontSize: 12, color: '#666', marginTop: 4 },
+  container: {
+    flex: 1,
+    backgroundColor: '#0f1217',
+  },
+
+  header: {
+    height: 56,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#0f1217',
+  },
+  title: {
+    fontSize: 18,
+    color: '#ffffff',
+    fontWeight: '600',
+  },
 
   tableHeader: {
     flexDirection: 'row',
-    paddingHorizontal: 12,
     paddingVertical: 8,
-    backgroundColor: '#fafafa',
-    borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
   },
   colHeader: {
     flex: 1,
     fontSize: 12,
-    fontWeight: '600',
-    textAlign: 'center',
+    color: '#8b8f97',
+    textAlign: 'right',
+    paddingHorizontal: 6,
   },
-  listContent: { paddingBottom: 24 },
+
   row: {
     flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
-    height: 48, 
+    height: 44,
+  },
+
+  listContent: {
+    paddingBottom: 32, 
   },
 });

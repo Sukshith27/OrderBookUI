@@ -1,7 +1,7 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Text, StyleSheet, View } from 'react-native';
 
-function OrderCell({ value, align = 'right', color, prev, curr, enableFlash = false }) {
+function OrderCell({ value, color = '#e6e6e6', prev, curr, enableFlash = false }) {
   const [flash, setFlash] = useState(null);
 
   useEffect(() => {
@@ -22,7 +22,7 @@ function OrderCell({ value, align = 'right', color, prev, curr, enableFlash = fa
 
   return (
     <View style={[styles.cell, flash === 'up' && styles.up, flash === 'down' && styles.down]}>
-      <Text style={[styles.text, { textAlign: align, color }]} numberOfLines={1}>
+      <Text style={[styles.text, { color }]} numberOfLines={1}>
         {value}
       </Text>
     </View>
@@ -34,13 +34,18 @@ export default React.memo(OrderCell);
 const styles = StyleSheet.create({
   cell: {
     flex: 1,
-    paddingVertical: 10,
     paddingHorizontal: 6,
+    justifyContent: 'center',
   },
   text: {
     fontSize: 14,
+    textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
-  up: { backgroundColor: '#dff7df' },
-  down: { backgroundColor: '#f7dfdf' },
+  up: {
+    backgroundColor: 'rgba(76,217,100,0.15)',
+  },
+  down: {
+    backgroundColor: 'rgba(255,107,107,0.15)',
+  },
 });
