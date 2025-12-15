@@ -5,11 +5,25 @@ import useOrderBook from '../hooks/useOrderBook';
 
 const EMPTY = { price: '', size: '' };
 const FLASH_LEVELS = 15;
+const SKELETON_ROWS = 20;
+
+function SkeletonRow() {
+  return (
+    <View style={styles.row}>
+      <View style={styles.skeletonCell} />
+      <View style={styles.skeletonCell} />
+      <View style={styles.skeletonCell} />
+      <View style={styles.skeletonCell} />
+    </View>
+  );
+}
 
 export default function OrderBookScreen() {
   const isScrollingRef = useRef(false);
   const { asks, bids, getPrevSize, flushPending } =
     useOrderBook('BTCUSD', isScrollingRef);
+
+  const hasData = asks.length > 0 || bids.length > 0;
 
   const rows = useMemo(() => {
     const maxLen = Math.max(asks.length, bids.length);
@@ -57,22 +71,30 @@ export default function OrderBookScreen() {
         <Text style={styles.colHeader}>Price (USD)</Text>
       </View>
 
-      <FlatList
-        data={rows}
-        keyExtractor={(i) => i.key}
-        renderItem={renderItem}
-        windowSize={8}
-        initialNumToRender={12}
-        maxToRenderPerBatch={20}
-        removeClippedSubviews
-        getItemLayout={(d, i) => ({ length: 44, offset: 44 * i, index: i })}
-        contentContainerStyle={styles.listContent}
-        onScrollBeginDrag={() => { isScrollingRef.current = true; }}
-        onScrollEndDrag={() => {
-          isScrollingRef.current = false;
-          flushPending();
-        }}
-      />
+      {!hasData ? (
+        <>
+          {Array.from({ length: SKELETON_ROWS }).map((_, i) => (
+            <SkeletonRow key={i} />
+          ))}
+        </>
+      ) : (
+        <FlatList
+          data={rows}
+          keyExtractor={(i) => i.key}
+          renderItem={renderItem}
+          windowSize={8}
+          initialNumToRender={12}
+          maxToRenderPerBatch={20}
+          removeClippedSubviews
+          getItemLayout={(d, i) => ({ length: 44, offset: 44 * i, index: i })}
+          contentContainerStyle={styles.listContent}
+          onScrollBeginDrag={() => { isScrollingRef.current = true; }}
+          onScrollEndDrag={() => {
+            isScrollingRef.current = false;
+            flushPending();
+          }}
+        />
+      )}
     </View>
   );
 }
@@ -110,5 +132,14 @@ const styles = StyleSheet.create({
 
   listContent: {
     paddingBottom: 32,
+  },
+
+  skeletonCell: {
+    flex: 1,
+    height: 16,
+    marginHorizontal: 6,
+    borderRadius: 4,
+    backgroundColor: '#1e2228',
+    alignSelf: 'center',
   },
 });
