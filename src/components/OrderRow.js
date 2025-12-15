@@ -5,8 +5,7 @@ function OrderCell({ value, color = '#e6e6e6', prev, curr, enableFlash = false }
   const [flash, setFlash] = useState(null);
 
   useEffect(() => {
-    if (!enableFlash) return;
-    if (prev === undefined || curr === undefined) return;
+    if (!enableFlash || prev === undefined || curr === undefined) return;
 
     if (curr > prev) {
       setFlash('up');
@@ -42,10 +41,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     fontVariant: ['tabular-nums'],
   },
-  up: {
-    backgroundColor: 'rgba(76,217,100,0.15)',
-  },
-  down: {
-    backgroundColor: 'rgba(255,107,107,0.15)',
-  },
+  up: { backgroundColor: 'rgba(76,217,100,0.15)' },
+  down: { backgroundColor: 'rgba(255,107,107,0.15)' },
 });

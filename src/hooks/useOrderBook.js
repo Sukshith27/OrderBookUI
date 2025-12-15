@@ -4,21 +4,21 @@ import { toEntry, buildSizeMap, sortAsks, sortBids } from '../utils/orderBook';
 const WS_URL = 'wss://socket.india.deltaex.org';
 const MAX_RECONNECT = 5;
 
-export default function useOrderBook(symbol = 'BTCUSD') {
+export default function useOrderBook(symbol = 'BTCUSD', isScrollingRef) {
   const [asks, setAsks] = useState([]);
   const [bids, setBids] = useState([]);
-  const [status, setStatus] = useState('connecting'); 
+  const [status, setStatus] = useState('connecting');
 
   const wsRef = useRef(null);
   const mountedRef = useRef(true);
   const reconnectAttempts = useRef(0);
   const reconnectTimer = useRef(null);
-
-  const isFirstMessageTimeLogged = useRef(false);
+  const rafRef = useRef(null);
 
   const prevMapRef = useRef({
     _previous: {},
     _current: {},
+    _pending: null,
   });
 
   useEffect(() => {
@@ -26,7 +26,6 @@ export default function useOrderBook(symbol = 'BTCUSD') {
 
     function connect() {
       setStatus('connecting');
-      const connectionStartTime = Date.now();
 
       try {
         const ws = new WebSocket(WS_URL);
@@ -35,71 +34,41 @@ export default function useOrderBook(symbol = 'BTCUSD') {
         ws.onopen = () => {
           reconnectAttempts.current = 0;
           setStatus('open');
-
-          const sub = {
+          ws.send(JSON.stringify({
             type: 'subscribe',
-            payload: {
-              channels: [{ name: 'l2_orderbook', symbols: [symbol] }],
-            },
-          };
-
-          try {
-            ws.send(JSON.stringify(sub));
-          } catch (e) {}
+            payload: { channels: [{ name: 'l2_orderbook', symbols: [symbol] }] },
+          }));
         };
 
         ws.onmessage = (event) => {
           if (!mountedRef.current) return;
 
-          if(!isFirstMessageTimeLogged.current) {
-            const timeTaken = Date.now() - connectionStartTime
-            console.log("[perf] First ws message received in:", timeTaken, "ms");
-            globalThis.WebSocketFirstMessageTime = timeTaken;
-            isFirstMessageTimeLogged.current = true;
-          }
-          
-
           let msg;
-          try {
-            msg = JSON.parse(event.data);
-            console.log('Received message:', msg);
-          } catch (e) {
+          try { msg = JSON.parse(event.data); } catch { return; }
+          if (msg.type !== 'l2_orderbook') return;
+
+          const buy = toEntry(msg.buy);
+          const sell = toEntry(msg.sell);
+
+          if (isScrollingRef?.current) {
+            prevMapRef.current._pending = { buy, sell };
             return;
           }
 
-          if (msg && msg.type === 'l2_orderbook') {
-            const buyEntries = toEntry(msg.buy);
-            const sellEntries = toEntry(msg.sell);
-
-            const newMap = buildSizeMap(buyEntries, sellEntries);
-
-            prevMapRef.current._previous = prevMapRef.current._current || {};
-            prevMapRef.current._current = newMap;
-
-            setAsks(sortAsks(sellEntries));
-            setBids(sortBids(buyEntries));
-          }
+          applySnapshot(buy, sell);
         };
 
-        ws.onerror = () => {
-          setStatus('error');
-        };
+        ws.onerror = () => setStatus('error');
 
         ws.onclose = () => {
           setStatus('closed');
-
           if (!mountedRef.current) return;
-
           if (reconnectAttempts.current < MAX_RECONNECT) {
-            const delay = 500 * Math.pow(2, reconnectAttempts.current); // 500ms, 1s, 2s, 4s...
-            reconnectAttempts.current += 1;
-
-            reconnectTimer.current = setTimeout(() => {
-              connect();
-            }, delay);
+            const delay = 500 * Math.pow(2, reconnectAttempts.current++);
+            reconnectTimer.current = setTimeout(connect, delay);
           }
         };
-      } catch (err) {
+      } catch {
         setStatus('error');
       }
     }
@@ -108,47 +77,37 @@ export default function useOrderBook(symbol = 'BTCUSD') {
 
     return () => {
       mountedRef.current = false;
-
-      if (reconnectTimer.current) {
-        clearTimeout(reconnectTimer.current);
-        reconnectTimer.current = null;
-      }
-
-      const ws = wsRef.current;
-
-      if (ws && ws.readyState === 1) {
-        try {
-          const unsub = {
-            type: 'unsubscribe',
-            payload: {
-              channels: [{ name: 'l2_orderbook', symbols: [symbol] }],
-            },
-          };
-          ws.send(JSON.stringify(unsub));
-        } catch (e) {}
-      }
-
-      try {
-        ws && ws.close();
-      } catch (e) {}
+      if (reconnectTimer.current) clearTimeout(reconnectTimer.current);
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      try { wsRef.current?.close(); } catch {}
     };
   }, [symbol]);
 
-  function getPrevSize(price) {
-    try {
-      const p = String(price);
-      return prevMapRef.current._previous[p];
-    } catch (e) {
-      return undefined;
-    }
+  function applySnapshot(buy, sell) {
+    if (rafRef.current) return;
+
+    rafRef.current = requestAnimationFrame(() => {
+      const newMap = buildSizeMap(buy, sell);
+      prevMapRef.current._previous = prevMapRef.current._current || {};
+      prevMapRef.current._current = newMap;
+
+      setAsks(sortAsks(sell));
+      setBids(sortBids(buy));
+
+      rafRef.current = null;
+    });
   }
 
-  return {
-    asks,
-    bids,
-    prevMapRef,
-    wsRef,
-    status,
-    getPrevSize,
-  };
+  function flushPending() {
+    const pending = prevMapRef.current._pending;
+    if (!pending) return;
+    applySnapshot(pending.buy, pending.sell);
+    prevMapRef.current._pending = null;
+  }
+
+  function getPrevSize(price) {
+    return prevMapRef.current._previous[String(price)];
+  }
+
+  return { asks, bids, status, getPrevSize, flushPending };
 }
