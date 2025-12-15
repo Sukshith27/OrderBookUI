@@ -1,8 +1,8 @@
 import React, { useEffect, useMemo, useRef } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
+import { LegendList } from '@legendapp/list'; 
 import OrderCell from '../components/orderRow';
 import useOrderBook from '../hooks/useOrderBook';
-
 
 export default function OrderBookScreen() {
   const startRenderTime = useRef(Date.now());
@@ -23,9 +23,6 @@ export default function OrderBookScreen() {
         bid: safeBids[i] || { price: '', size: '' },
       });
     }
-
-    // retun only 1st item
-    // return out.slice(0, 2);
     return out;
   }, [safeAsks, safeBids]);
 
@@ -34,8 +31,9 @@ export default function OrderBookScreen() {
       const now = Date.now();
       const listRenderTime = now - startRenderTime.current;
       console.log(`[perf] list first item render time: ${listRenderTime} ms`);
-      console.log('[perf] ws time - render time:', listRenderTime - (globalThis.WebSocketFirstMessageTime), 'ms');
-
+      if (globalThis.WebSocketFirstMessageTime) {
+        console.log('[perf] ws time - render time:', listRenderTime - (globalThis.WebSocketFirstMessageTime), 'ms');
+      }
       firstRenderDone.current = true;
     }
 
@@ -62,8 +60,8 @@ export default function OrderBookScreen() {
           color="#006400"
         />
       </View>
-    )
-  }
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -79,14 +77,19 @@ export default function OrderBookScreen() {
         <Text style={styles.colHeader}>Price (USD)</Text>
       </View>
 
+
       <FlatList
         data={rows}
         keyExtractor={(i) => i.key}
         renderItem={renderItem}
-        initialNumToRender={12}
+        
+        estimatedItemSize={48} 
+        recycleItems={true}    
+        windowSize={50}
+           initialNumToRender={12}
         maxToRenderPerBatch={20}
-        // windowSize={5}
         getItemLayout={(data, index) => ({ length: 48, offset: 48 * index, index })}
+
         contentContainerStyle={styles.listContent}
       />
     </View>
@@ -101,27 +104,6 @@ const styles = StyleSheet.create({
 
   tableHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    backgroundColor: '#fafafa',
-    borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
-  },
-  colHeader: { fontSize: 12, fontWeight: '600' },
-  left: { textAlign: 'left' },
-  right: { textAlign: 'right' },
-
-  listContent: { paddingBottom: 24 },
-  row: {
-    flexDirection: 'row',
-    borderBottomWidth: 1,
-    borderColor: '#f0f0f0',
-  },
-
-  side: { flex: 1 },
-  tableHeader: {
-    flexDirection: 'row',
     paddingHorizontal: 12,
     paddingVertical: 8,
     backgroundColor: '#fafafa',
@@ -134,5 +116,11 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-
+  listContent: { paddingBottom: 24 },
+  row: {
+    flexDirection: 'row',
+    borderBottomWidth: 1,
+    borderColor: '#f0f0f0',
+    height: 48, 
+  },
 });
