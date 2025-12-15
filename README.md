@@ -1,97 +1,195 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# 📘 OrderBookUI – React Native L2 Orderbook
 
-# Getting Started
+🔗 **GitHub Repository**  
+https://github.com/Sukshith27/OrderBookUI.git
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+---
 
-## Step 1: Start Metro
+## 📱 Overview
 
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
+This project implements a **real-time L2 Order Book UI** using **React Native** and **WebSocket** data from **Delta Exchange**.
 
-To start the Metro dev server, run the following command from the root of your React Native project:
+The main goal of this assignment was not just to display data, but to handle **real-world performance challenges** such as:
 
-```sh
-# Using npm
-npm start
+- High-frequency full snapshot updates
+- Smooth scrolling under heavy data churn
+- Correct orderbook alignment and flashing logic
+- Good user experience during app launch and loading
 
-# OR using Yarn
-yarn start
-```
+This project was built incrementally, with multiple iterations and performance experiments, similar to how a real production feature would evolve.
 
-## Step 2: Build and run your app
+---
 
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
+## 🚀 Getting Started
 
-### Android
+### 1️⃣ Clone the repository
+```bash
+git clone https://github.com/Sukshith27/OrderBookUI.git
+cd OrderBookUI
 
-```sh
-# Using npm
-npm run android
+2️⃣ Install dependencies
+npm install
 
-# OR using Yarn
-yarn android
-```
+3️⃣ Run the application
+yarn start 
+yarn run android
 
-### iOS
+▶️ Final Working Demo 
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+This video shows the final optimized version of the application:
+-App launch
+-Skeleton loader while WebSocket connects
+-Live L2 orderbook updates
+-Smooth scrolling
+-Flash animation when size changes
+-Stable UI under continuous updates
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+📎 Video file:
+OrderBookUI - Complete working video
 
-```sh
-bundle install
-```
 
-Then, and every time you update your native dependencies, run:
+▶️ Performance Evolution Videos (Engineering Journey)
 
-```sh
-bundle exec pod install
-```
+-To clearly demonstrate the engineering approach, multiple videos were recorded during development:
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+1️⃣ Initial Version
+-Basic FlatList
+-Noticeable lag while scrolling fast
 
-```sh
-# Using npm
-npm run ios
+📎 Video files:
+Flatlist with no additional props
+Lag wile scrolling
 
-# OR using Yarn
-yarn ios
-```
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+2️⃣ After FlatList Optimizations
+-Tuned windowSize, initialNumToRender, maxToRenderPerBatch
+-Reduced lag, but frame drops still visible under 
+📎 Video file:
+[perf] improved
 
-## Step 3: Modify your app
 
-Now that you have successfully run the app, let's make changes!
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+3️⃣ After Throttling UI Updates
+-Introduced requestAnimationFrame
+-Significant FPS improvement
+📎 Video file:
+No lag while scrolling
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
 
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
 
-## Congratulations! :tada:
+4️⃣ After Adding Skeleton Loader
+-Better perceived performance
+-No blank screen during initial WebSocket connection
+📎 Video file:
+OrderBookUI - Complete working video (initial load section)
 
-You've successfully run and modified your React Native App. :partying_face:
 
-### Now what?
 
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
+📎 Performance Comparison Videos – Attached
+-These videos show the step-by-step improvements rather than just the final result.
 
-# Troubleshooting
+🔌 Data Source & API Details
+-WebSocket Endpoint : `wss://socket.india.deltaex.org`
 
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
+Subscribed Channel
+-l2_orderbook
 
-# Learn More
+Important Detail
+-Each WebSocket message contains the entire L2 orderbook snapshot.
 
-To learn more about React Native, take a look at the following resources:
+As per the assignment requirement:
+-The UI replaces all rows completely on every update
+-No incremental updates are applied
+-No REST API call is required
 
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+🧠 Architecture & Code Structure
+src/
+ ├── components/
+ │   └── OrderCell.js
+ ├── hooks/
+ │   └── useOrderBook.js
+ ├── screens/
+ │   └── OrderBookScreen.js
+ └── utils/
+     └── orderBook.js
+
+🧩 Key Responsibilities
+useOrderBook
+-Manages WebSocket lifecycle
+-Handles reconnect logic
+-Buffers updates during scrolling
+-Throttles UI updates for performance
+
+OrderBookScreen
+-Renders header, column labels, and list
+-Uses FlatList with tuned props
+-Handles scrolling state and skeleton loader
+
+OrderCell
+-Fixed-width column rendering
+-Uses tabular numbers for alignment
+-Flash animation only when size changes
+
+⚡ Performance Optimizations
+-Because this is a real-time orderbook, performance was a major focus:
+-Throttled UI updates using requestAnimationFrame
+-Buffered WebSocket updates during aggressive scrolling
+-Applied latest snapshot after scroll ends
+-Limited flash animation to top price levels
+-Stable row height with getItemLayout
+-Tuned FlatList props for high-frequency updates
+-Skeleton loader during initial app load
+
+🐛 Problems Faced & How They Were Solved
+❌ Blank screen during fast scrolling
+
+Cause:
+FlatList recycling + full snapshot replacement
+
+Solution:
+-Paused UI updates during scrolling
+-Buffered the latest snapshot
+-Applied updates after scroll ended
+
+❌ Scrolling stopped after a few scrolls
+
+Cause:
+Temporary depth limit added during testing
+
+Solution:
+-Removed hard limit
+-Made depth configurable
+
+❌ Frame drops during live updates
+
+Cause:
+Too many state updates per second
+
+Solution:
+-Throttled updates using requestAnimationFrame
+-Reduced unnecessary re-renders
+-Optimized FlatList configuration
+
+❌ Blank screen on app launch
+
+Cause:
+WebSocket connection delay
+
+Solution:
+-Added skeleton loader for better user experience
+
+🎯 UI Rules Followed (As Per Assignment)
+
+-Ask side → Price | Size
+-Bid side → Size | Price
+-Flash only when size changes
+-No depth bar implemented (as required)
+-Dark trading-style UI
+-Proper column alignment using tabular numbers
+
+✅ Final Notes
+-Redux was not used intentionally (local state was sufficient)
+-Focus was on correctness, performance, and UX
+-Code was written incrementally, like a real production feature
+-Performance trade-offs were tested, measured, and documented using videos
